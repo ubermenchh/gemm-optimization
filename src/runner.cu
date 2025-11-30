@@ -6,89 +6,91 @@
 
 void CudaDeviceInfo() {
     int deviceId;
-    CUDA_CHECK(cudaGetDevice(&deviceId));
+    CHECK_CUDA_ERROR(cudaGetDevice(&deviceId));
 
     cudaDeviceProp props{};
-    CUDA_CHECK(cudaGetDeviceProperties(&props, deviceId));
+    CHECK_CUDA_ERROR(cudaGetDeviceProperties(&props, deviceId));
 
-    printf("\n");
-    printf("========================================\n");
-    printf("GPU Device Information\n");
-    printf("========================================\n");
-    printf("Device ID: %d\n", deviceId);
-    printf("Name: %s\n", props.name);
-    printf("Compute Capability: %d.%d\n", props.major, props.minor);
-    printf("Memory Bus Width: %d bits\n", props.memoryBusWidth);
-    printf("Peak Memory Bandwidth: %.2f GB/s\n", 
-           2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6);
-    printf("Total Global Memory: %zu MB\n", props.totalGlobalMem / 1024 / 1024);
-    printf("Shared Memory Per Block: %zu KB\n", props.sharedMemPerBlock / 1024);
-    printf("Max Threads Per Block: %d\n", props.maxThreadsPerBlock);
-    printf("Number of SMs: %d\n", props.multiProcessorCount);
-    printf("Warp Size: %d\n", props.warpSize);
-    printf("========================================\n\n");
+    std::cout << std::endl;
+    std::cout << "========================================" << std::endl;
+    std::cout << "GPU Device Information" << std::endl;
+    std::cout << "========================================" << std::endl;
+    std::cout << "Device ID: " << deviceId << std::endl;
+    std::cout << "Name: " << props.name << std::endl;
+    std::cout << "Compute Capability: " << props.major << "." << props.minor << std::endl;
+    std::cout << "Memory Bus Width: " << props.memoryBusWidth << " bits" << std::endl;
+    std::cout << "Peak Memory Bandwidth: " 
+              << 2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6 
+              << " GB/s" << std::endl;
+    std::cout << "Total Global Memory: " << props.totalGlobalMem / 1024 / 1024 << " MB" << std::endl;
+    std::cout << "Shared Memory Per Block: " << props.sharedMemPerBlock / 1024 << " KB" << std::endl;
+    std::cout << "Max Threads Per Block: " << props.maxThreadsPerBlock << std::endl;
+    std::cout << "Number of SMs: " << props.multiProcessorCount << std::endl;
+    std::cout << "Warp Size: " << props.warpSize << std::endl;
+    std::cout << "========================================" << std::endl << std::endl;
 }
 
-void randomize_matrix_fp32(float *mat, int N) {
+void randomize_matrix_fp32(float* mat, int N) {
     struct timeval time {};
     gettimeofday(&time, nullptr);
     srand(time.tv_usec);
     for (int i = 0; i < N; i++) {
-        float tmp = (float)(rand() % 5) + 0.01 * (rand() % 5);
-        tmp = (rand() % 2 == 0) ? tmp : tmp * (-1.);
+        float tmp = static_cast<float>(rand() % 5) + 0.01f * static_cast<float>(rand() % 5);
+        tmp = (rand() % 2 == 0) ? tmp : tmp * (-1.0f);
         mat[i] = tmp;
     }
 }
 
-void zero_init_matrix_fp32(float *mat, int N) {
+void zero_init_matrix_fp32(float* mat, int N) {
     for (int i = 0; i < N; i++) {
         mat[i] = 0.0f;
     }
 }
 
-bool verify_matrix_fp32(float *matRef, float *matOut, int N, float tolerance) {
+bool verify_matrix_fp32(float* matRef, float* matOut, int N, float tolerance) {
     double diff = 0.0;
     int errors = 0;
-    const int max_errors_to_print = 10;
+    int const max_errors_to_print = 10;
     
     for (int i = 0; i < N; i++) {
         diff = std::fabs(matRef[i] - matOut[i]);
         if (std::isnan(diff) || diff > tolerance) {
             if (errors < max_errors_to_print) {
-                printf("Divergence at %d: Expected %5.2f, Got %5.2f (Diff %5.2f)\n",
-                       i, matRef[i], matOut[i], diff);
+                std::cerr << "Divergence at " << i 
+                          << ": Expected " << matRef[i] 
+                          << ", Got " << matOut[i] 
+                          << " (Diff " << diff << ")" << std::endl;
             }
             errors++;
         }
     }
     
     if (errors > 0) {
-        printf("Total errors: %d out of %d elements (%.2f%%)\n", 
-               errors, N, 100.0f * errors / N);
+        std::cerr << "Total errors: " << errors << " out of " << N 
+                  << " elements (" << 100.0f * errors / N << "%)" << std::endl;
         return false;
     }
     return true;
 }
 
-void run_naive_gemm_fp32(int M, int N, int K, float alpha, 
-                         float *A, float *B, float beta, float *C) {
-    dim3 gridDim(CEIL_DIV(N, 32), CEIL_DIV(M, 32), 1);
-    dim3 blockDim(32, 32, 1);
-    naive_gemm<<<gridDim, blockDim>>>(A, B, C, M, N, K, alpha, beta);
-}
-
 void run_kernel(int kernel_num, int M, int N, int K, float alpha, 
-                float *A, float *B, float beta, float *C) {
+                float* A, float* B, float beta, float* C,
+                cudaStream_t stream) {
     switch (kernel_num) {
         case 0:
-            run_cublas_fp32(M, N, K, alpha, A, B, beta, C);
+            run_cublas_fp32(M, N, K, alpha, A, B, beta, C, stream);
             break;
         case 1:
-            run_naive_gemm_fp32(M, N, K, alpha, A, B, beta, C);
+            launch_naive_gemm<float>(
+                static_cast<size_t>(M), 
+                static_cast<size_t>(N), 
+                static_cast<size_t>(K),
+                &alpha, A, B, &beta, C, stream
+            );
             break;
         default:
-            printf("Invalid kernel number: %d\n", kernel_num);
-            exit(1);
+            std::cerr << "Invalid kernel number: " << kernel_num << std::endl;
+            std::exit(EXIT_FAILURE);
     }
 }
 

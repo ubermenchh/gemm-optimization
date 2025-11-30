@@ -1,11 +1,18 @@
 #pragma once
+
 #include <cublas_v2.h>
 #include "runner.cuh"
 
 inline void run_cublas_fp32(int M, int N, int K, float alpha, 
-                            float *A, float *B, float beta, float *C) {
+                            float* A, float* B, float beta, float* C,
+                            cudaStream_t stream) {
     cublasHandle_t handle;
     cublasCreate(&handle);
+    
+    // Set stream if provided
+    if (stream != nullptr) {
+        cublasSetStream(handle, stream);
+    }
     
     // cuBLAS uses column-major, but we have row-major matrices
     // C = A * B  (row-major)
