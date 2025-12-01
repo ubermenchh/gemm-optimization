@@ -7,24 +7,24 @@
 // A -> M x K
 // B -> K x N
 // C -> M x N
-//
-// C = alpha * A @ B + beta * C
+// 
+// C = alpha * A @ B + beta @ C
 
 template <typename T>
-__global__ void naive_gemm_kernel(
+__global__ void mem_coalesced_gemm(
     size_t M, size_t N, size_t K,
     T alpha,
     T const* __restrict__ A,
     T const* __restrict__ B,
-    T beta,
+    T beta, 
     T* __restrict__ C
 ) {
-    size_t const row = blockIdx.x * blockDim.x + threadIdx.x;
-    size_t const col = blockIdx.y * blockDim.y + threadIdx.y;
+    size_t row = blockIdx.y * blockDim.y + threadIdx.y;
+    size_t col = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (row < M && col < N) {
         T temp = static_cast<T>(0);
-        for (size_t i = 0; i < K; ++i) {
+        for (size_t i = 0; i < K; i++) {
             temp += A[row * K + i] * B[i * N + col];
         }
         C[row * N + col] = alpha * temp + beta * C[row * N + col];
@@ -32,7 +32,7 @@ __global__ void naive_gemm_kernel(
 }
 
 template <typename T>
-void launch_naive_gemm(
+void launch_mem_coalesced_gemm(
     size_t M, size_t N, size_t K,
     T const* alpha,
     T const* A,
@@ -47,16 +47,14 @@ void launch_naive_gemm(
         (static_cast<unsigned int>(M) + block_dim.y - 1U) / block_dim.y,
         1U
     };
-    
-    naive_gemm_kernel<T><<<grid_dim, block_dim, 0U, stream>>>(
+
+    mem_coalesced_gemm<T><<<grid_dim, block_dim, 0U, stream>>>(
         M, N, K, *alpha, A, B, *beta, C
     );
-    
     CHECK_LAST_CUDA_ERROR();
 }
 
-// Explicit template instantiations
-template void launch_naive_gemm<float>(
+template void launch_mem_coalesced_gemm<float>(
     size_t M, size_t N, size_t K,
     float const* alpha, float const* A,
     float const* B, float const* beta,

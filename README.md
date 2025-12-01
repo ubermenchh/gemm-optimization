@@ -7,7 +7,8 @@ Optimizing General Matrix Multiplication (GEMM) kernels on NVIDIA GPUs. This pro
 | Kernel | Matrix Size | Time (ms) | TFLOPS | Bandwidth (GB/s) | GPU |
 |--------|-------------|-----------|--------|------------------|-----------|-----|
 | cuBLAS SGEMM (Gold Standard) | 4096x4096 | 9.2 | 14.93 | 21.8 | A100 |
-| Naive GEMM | 4096x4096 | 46.52 | 2.95 | 4.33 | A100 |
+| Naive GEMM | 4096x4096 | 470.903 | 0.29 | 0.43 | A100 |
+| Memory Coalesced GEMM | 4096x4096 | 46.52 | 2.95 | 4.33 | A100 |
 
 *A100 FP32 theoretical peak: 19.5 TFLOPS | Memory bandwidth: 2039 GB/s*
 

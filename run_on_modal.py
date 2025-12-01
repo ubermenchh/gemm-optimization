@@ -19,7 +19,8 @@ image = modal.Image.from_registry(
 
 KERNEL_NAMES = {
     0: "cuBLAS SGEMM (Gold Standard)",
-    1: "Naive GEMM (FP32)"
+    1: "Naive GEMM (FP32)",
+    2: "Mem Coalesced GEMM (FP32)",
 }
 
 @app.function(gpu="A100", image=image, timeout=600)
@@ -114,6 +115,7 @@ def main(kernel: int=1, size: int=4096, iterations: int=100, list_kernels: bool=
         "src/kernels.cuh",
         "src/gemm_cublas.cuh",
         "src/kernels/naive_gemm.cuh",
+        "src/kernels/mem_coalesce_gemm.cuh",
     ]
     
     for filepath in required_files:

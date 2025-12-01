@@ -1,4 +1,4 @@
-.PHONY: naive cublas all list clean help
+.PHONY: naive mem-coalesce cublas all list clean help
 
 SIZE ?= 4096
 ITERS ?= 100
@@ -12,6 +12,7 @@ help:
 	@echo "Targets:"
 	@echo "  cublas      Run cuBLAS reference (kernel 0)"
 	@echo "  naive       Run naive GEMM (kernel 1)"
+	@echo "  mem-coalesce Run mem coalesced GEMM (kernel 2)"
 	@echo "  all         Run all kernels sequentially"
 	@echo "  list        List available kernels"
 	@echo ""
@@ -35,4 +36,7 @@ cublas:
 naive:
 	@uv run modal run run_on_modal.py --kernel 1 --size $(SIZE) --iterations $(ITERS)
 
-all: cublas naive
+mem-coalesce:
+	@uv run modal run run_on_modal.py --kernel 2 --size $(SIZE) --iterations $(ITERS)
+
+all: cublas naive mem-coalesce
