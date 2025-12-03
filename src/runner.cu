@@ -96,6 +96,14 @@ void run_kernel(int kernel_num, int M, int N, int K, float alpha,
                 &alpha, A, B, &beta, C, stream
             );
             break;
+        case 3:
+            launch_shared_mem_gemm<float>(
+                static_cast<size_t>(M),
+                static_cast<size_t>(N),
+                static_cast<size_t>(K),
+                &alpha, A, B, &beta, C, stream
+            );
+            break;
         default:
             std::cerr << "Invalid kernel number: " << kernel_num << std::endl;
             std::exit(EXIT_FAILURE);
@@ -107,6 +115,7 @@ const char* get_kernel_name(int kernel_num) {
         case 0: return "cuBLAS SGEMM (Gold Standard)";
         case 1: return "Naive GEMM (FP32)";
         case 2: return "Mem Coalesced GEMM (FP32)";
+        case 3: return "Shared Memory GEMM (FP32)";
         default: return "Unknown";
     }
 }

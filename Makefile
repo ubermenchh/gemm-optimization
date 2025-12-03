@@ -1,4 +1,4 @@
-.PHONY: naive mem-coalesce cublas all list clean help
+.PHONY: naive mem-coalesce shared-mem cublas all list clean help
 
 SIZE ?= 4096
 ITERS ?= 100
@@ -39,4 +39,7 @@ naive:
 mem-coalesce:
 	@uv run modal run run_on_modal.py --kernel 2 --size $(SIZE) --iterations $(ITERS)
 
-all: cublas naive mem-coalesce
+shared-mem:
+	@uv run modal run run_on_modal.py --kernel 3 --size $(SIZE) --iterations $(ITERS)
+
+all: cublas naive mem-coalesce shared-mem
