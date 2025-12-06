@@ -1,4 +1,4 @@
-.PHONY: naive mem-coalesce shared-mem cublas all list clean help
+.PHONY: naive mem-coalesce shared-mem thread-coarse cublas all list clean help
 
 SIZE ?= 4096
 ITERS ?= 100
@@ -13,6 +13,7 @@ help:
 	@echo "  cublas      Run cuBLAS reference (kernel 0)"
 	@echo "  naive       Run naive GEMM (kernel 1)"
 	@echo "  mem-coalesce Run mem coalesced GEMM (kernel 2)"
+	@echo "  thread-coarse Run thread coarse GEMM (kernel 4)"
 	@echo "  all         Run all kernels sequentially"
 	@echo "  list        List available kernels"
 	@echo ""
@@ -42,4 +43,7 @@ mem-coalesce:
 shared-mem:
 	@uv run modal run run_on_modal.py --kernel 3 --size $(SIZE) --iterations $(ITERS)
 
-all: cublas naive mem-coalesce shared-mem
+thread-coarse:
+	@uv run modal run run_on_modal.py --kernel 4 --size $(SIZE) --iterations $(ITERS)
+
+all: cublas naive mem-coalesce shared-mem thread-coarse
