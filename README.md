@@ -11,6 +11,7 @@ Optimizing General Matrix Multiplication (GEMM) kernels on NVIDIA GPUs. This pro
 | Memory Coalesced GEMM | 4096x4096 | 46.52 | 2.95 | 4.33 | A100 |
 | Shared Memory GEMM | 4096x4096 | 27.95 | 4.92 | 7.20 | A100 |
 | Thread Coarse GEMM | 4096x4096 | 14.33 | 9.59 | 14.05 | A100 |
+| 2D Block Tiling GEMM | 4096x4096 | 25.06 | 5.48 | 8.03 | A100 |
 
 *A100 FP32 theoretical peak: 19.5 TFLOPS | Memory bandwidth: 2039 GB/s*
 

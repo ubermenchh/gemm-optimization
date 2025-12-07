@@ -65,6 +65,14 @@ void launch_thread_coarse_gemm(
     T* C, cudaStream_t stream
 );
 
+template <typename T>
+void launch_2d_block_tiling_gemm(
+    size_t M, size_t N, size_t K,
+    T const* alpha, T const* A,
+    T const* B, T const* beta,
+    T* C, cudaStream_t stream
+);
+
 // cuBLAS reference
 void run_cublas_fp32(int M, int N, int K, float alpha, 
                      float* A, float* B, float beta, float* C,
